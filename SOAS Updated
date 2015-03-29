@@ -1,0 +1,166 @@
+#pragma config(Hubs,  S1, HTMotor,  HTMotor,  HTMotor,  HTMotor)
+#pragma config(Hubs,  S2, HTServo,  HTServo,  none,     none)
+#pragma config(Sensor, S1,     ,               sensorI2CMuxController)
+#pragma config(Sensor, S2,     ,               sensorI2CMuxController)
+#pragma config(Sensor, S3,     SMUX1,           sensorI2CMuxController)
+#pragma config(Sensor, S4,     SMUX2,           sensorI2CMuxController)
+#pragma config(Motor,  mtr_S1_C1_1,     frontRight,    tmotorTetrix, openLoop, encoder)
+#pragma config(Motor,  mtr_S1_C1_2,     backRight,     tmotorTetrix, openLoop, encoder)
+#pragma config(Motor,  mtr_S1_C2_1,     motorLift1,    tmotorTetrix, openLoop)
+#pragma config(Motor,  mtr_S1_C2_2,     motorLift2,    tmotorTetrix, openLoop, encoder)
+#pragma config(Motor,  mtr_S1_C3_1,     frontLeft,     tmotorTetrix, openLoop, encoder)
+#pragma config(Motor,  mtr_S1_C3_2,     backLeft,      tmotorTetrix, openLoop, encoder)
+#pragma config(Motor,  mtr_S1_C4_1,     collector,     tmotorTetrix, openLoop)
+#pragma config(Motor,  mtr_S1_C4_2,     collector2,    tmotorTetrix, openLoop)
+#pragma config(Servo,  srvo_S2_C1_1,    dump,                 tServoStandard)
+#pragma config(Servo,  srvo_S2_C1_2,    rollingGoalLeft,      tServoNone)
+#pragma config(Servo,  srvo_S2_C1_3,    rollingGoalRight,     tServoNone)
+#pragma config(Servo,  srvo_S2_C1_4,    servo4,               tServoNone)
+#pragma config(Servo,  srvo_S2_C1_5,    servo5,               tServoNone)
+#pragma config(Servo,  srvo_S2_C1_6,    servo6,               tServoNone)
+#pragma config(Servo,  srvo_S2_C2_1,    servo2,               tServoStandard)
+#pragma config(Servo,  srvo_S2_C2_2,    servo3,               tServoStandard)
+#pragma config(Servo,  srvo_S2_C2_3,    servo9,               tServoNone)
+#pragma config(Servo,  srvo_S2_C2_4,    servo10,              tServoNone)
+#pragma config(Servo,  srvo_S2_C2_5,    servo11,              tServoNone)
+#pragma config(Servo,  srvo_S2_C2_6,    servo12,              tServoNone)
+
+float sonarFront = 0;
+float sonarBack = 0;
+float sonarRight = 0;
+float sonarLeft = 0;
+float distanceTraveled = 0;
+int motorSpeed = 50;
+float times = 0;
+
+const tMUXSensor sonarFrontSensor = msensor_S3_1;
+const tMUXSensor sonarBackSensor = msensor_S3_2;
+const tMUXSensor sonarLeftSensor = msensor_S3_3;
+const tMUXSensor sonarRightSensor = msensor_S3_4;
+const tMUXSensor Gyro = msensor_S4_1;
+const tMUXSensor IR_LEFT = msensor_S4_2;
+
+
+void getAroundObject (int direction) {
+	if(direction == 2 || direction == 5 || direction == 6 || direction == 8|| direction == 11 || direction == 12 || direction == 14) {
+		while(sonarFront <= 10 && sonarBack	<= 10) {
+			motor[frontRight] = 50;
+			motor[frontLeft] = -50;
+			motor[backLeft] = 50;
+			motor[backRight] = -50;
+			distanceTraveled++;
+		}
+
+		while(sonarRight <= 50) {
+			motor[frontRight] = motorSpeed;
+			motor[frontLeft] = motorSpeed;
+			motor[backLeft] = motorSpeed;
+			motor[backRight] = motorSpeed;
+		}
+
+		while(times <= distanceTraveled) {
+			motor[frontRight] = -motorSpeed;
+			motor[frontLeft] = motorSpeed;
+			motor[backLeft] = -motorSpeed;
+			motor[backRight] = motorSpeed;
+			times++;
+		}
+		times = 0;
+		distanceTraveled = 0;
+	}
+	if(direction == 1 || direction == 7 || direction == 9 || direction == 13) {
+	while(sonarFront <= 10 && sonarBack	<= 10) {
+			motor[frontRight] = -motorSpeed;
+			motor[frontLeft] = motorSpeed;
+			motor[backLeft] = -motorSpeed;
+			motor[backRight] = motorSpeed;
+			distanceTraveled++;
+		}
+
+		while(sonarLeft <= 50) {
+			motor[frontRight] = motorSpeed;
+			motor[frontLeft] = -motorSpeed;
+			motor[backLeft] = -motorSpeed;
+			motor[backRight] = motorSpeed;
+		}
+		
+		while(times <= distanceTraveled) {
+			motor[frontRight] = motorSpeed;
+			motor[frontLeft] = -motorSpeed;
+			motor[backLeft] = -motorSpeed;
+			motor[backRight] = motorSpeed;
+			times++;
+		}
+		distanceTraveled = 0;
+		times = 0;
+	}
+	if(direction == 3 || direction == 10) {
+		while(sonarFront <= 10 && sonarBack	<= 10) {
+			motor[frontRight] = motorSpeed;
+			motor[frontLeft] = motorSpeed;
+			motor[backLeft] = -motorSpeed;
+			motor[backRight] = -motorSpeed;
+		}
+	}
+	if(direction == 4) {
+		while(sonarLeft <= 10 && sonarRight	<= 10) {
+			motor[frontRight] = -motorSpeed;
+			motor[frontLeft] = -motorSpeed;
+			motor[backLeft] = motorSpeed;
+			motor[backRight] = motorSpeed;
+		}
+	}
+}
+
+task checkForObstacle () {
+		sonarFront = SensorValue(sonarFrontSensor);
+		sonarBack = SensorValue(sonarBackSensor);
+		sonarLeft = SensorValue(sonarLeftSensor);
+		sonarRight = SensorValue(sonarRightSensor);
+		if(sonarFront <= 10 && sonarBack <= 10 && sonarLeft <= 10) {
+			getAroundObject(1);
+		}
+		else if(sonarFront <= 10 && sonarBack <= 10 && sonarRight <= 10) {
+			getAroundObject(2);
+		}
+		else if(sonarRight <= 10 && sonarLeft <= 10 && sonarBack <= 10) {
+			getAroundObject(3);
+		}
+		else if(sonarRight <= 10 && sonarLeft <= 10 && sonarFront <= 10) {
+			getAroundObject(4);
+		}
+		else if(sonarFront <= 10 && sonarBack <= 10) {
+			getAroundObject(5);
+		}
+		else if(sonarFront <= 10 && sonarRight <= 10) {
+			getAroundObject(6);
+		}
+		else if(sonarFront <= 10 && sonarLeft <= 10) {
+			getAroundObject(7);
+		}
+		else if(sonarBack <= 10 && sonarRight <= 10) {
+			getAroundObject(8);
+		}
+		else if(sonarBack <= 10 && sonarLeft <= 10) {
+			getAroundObject(9);
+		}
+		else if(sonarRight <= 10 && sonarLeft <= 10) {
+			getAroundObject(10);
+		}
+		else if(sonarFront <= 10) {
+			getAroundObject(11);
+		}
+		else if(sonarBack <= 10) {
+			getAroundObject(12);
+		}
+		else if(sonarLeft <= 10) {
+			getAroundObject(13);
+		}
+		else if(sonarRight <= 10) {
+			getAroundObject(14);
+		}
+}
+
+task main() {
+	startTask(checkForObstacle);
+}
